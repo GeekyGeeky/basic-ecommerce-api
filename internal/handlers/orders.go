@@ -24,7 +24,8 @@ func PlaceOrder(db *sql.DB) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user ID from context"})
 			return
 		}
-		order.UserID = userID.(uint)
+		order.UserID = userID.(int)
+		order.Status = "Pending"
 
 		query := `INSERT INTO orders (user_id, product_id, status) VALUES (?, ?, ?)`
 		result, err := db.Exec(query, order.UserID, order.ProductID, order.Status)
@@ -38,7 +39,7 @@ func PlaceOrder(db *sql.DB) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get last inserted ID"})
 			return
 		}
-		order.ID = uint(orderID)
+		order.ID = int(orderID)
 
 		c.JSON(http.StatusCreated, gin.H{"message": "Order placed successfully", "order": order})
 	}
@@ -72,7 +73,7 @@ func ListOrders(db *sql.DB) gin.HandlerFunc {
 			orders = append(orders, order)
 		}
 
-		c.JSON(http.StatusOK, gin.H{"orders": orders})
+		c.JSON(http.StatusOK, gin.H{"status": "success", "data": orders})
 	}
 }
 
@@ -91,7 +92,7 @@ func CancelOrder(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		query := `UPDATE orders SET status = 'Cancelled' WHERE id = ? AND user_id = ?`
+		query := `UPDATE orders SET status = 'Cancelled' WHERE id = ? AND user_id = ? AND status = 'Pending'`
 		result, err := db.Exec(query, orderID, userID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to cancel order"})
@@ -107,7 +108,7 @@ func CancelOrder(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "Order cancelled successfully"})
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Order cancelled successfully"})
 	}
 }
 
@@ -150,6 +151,6 @@ func UpdateOrderStatus(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "Order status updated successfully"})
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Order status updated successfully"})
 	}
 }
