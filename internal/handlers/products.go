@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/GeekyGeeky/basic-ecommerce-api/internal/models"
+	"github.com/gin-gonic/gin"
 )
 
 func CreateProduct(db *sql.DB) gin.HandlerFunc {
@@ -17,13 +17,22 @@ func CreateProduct(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		_, err := db.Exec("INSERT INTO products (name, description, price) VALUES (?, ?, ?)", product.Name, product.Description, product.Price)
+		result, err := db.Exec("INSERT INTO products (name, description, price) VALUES (?, ?, ?)", product.Name, product.Description, product.Price)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		id, err := result.LastInsertId()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusCreated, product)
+		c.JSON(http.StatusCreated, gin.H{
+			"id":          id,
+			"name":        product.Name,
+			"description": product.Description,
+		})
 	}
 }
 
@@ -31,7 +40,10 @@ func GetProducts(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		rows, err := db.Query("SELECT * FROM products")
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status": "error",
+				"error":  err.Error(),
+			})
 			return
 		}
 		defer rows.Close()
@@ -45,7 +57,10 @@ func GetProducts(db *sql.DB) gin.HandlerFunc {
 			}
 			products = append(products, p)
 		}
-		c.JSON(http.StatusOK, products)
+		c.JSON(http.StatusOK, gin.H{
+			"status": "success",
+			"data":   products,
+		})
 	}
 }
 
@@ -70,7 +85,14 @@ func UpdateProduct(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, product)
+		c.JSON(http.StatusOK, gin.H{
+			"status": "success",
+			"data": gin.H{
+				"id":          id,
+				"name":        product.Name,
+				"description": product.Description,
+			},
+		})
 	}
 }
 
