@@ -129,13 +129,13 @@ func UpdateOrderStatus(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		userID, exists := c.Get("user_id")
+		_, exists := c.Get("is_admin")
 		if !exists {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user ID from context"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Cannot to perform request"})
 			return
 		}
-		query := `UPDATE orders SET status = ? WHERE id = ? AND user_id = ?`
-		result, err := db.Exec(query, req.Status, orderID, userID)
+		query := `UPDATE orders SET status = ? WHERE id = ?`
+		result, err := db.Exec(query, req.Status, orderID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update order status"})
 			return
@@ -147,7 +147,7 @@ func UpdateOrderStatus(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 		if rowsAffected == 0 {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Order not found or not owned by user"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
 			return
 		}
 
