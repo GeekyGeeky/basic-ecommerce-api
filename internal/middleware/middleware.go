@@ -66,6 +66,7 @@ func AdminMiddleware(authService *auth.AuthService) gin.HandlerFunc {
 			return
 		}
 
+		c.Set("is_admin", true)
 		c.Next()
 	}
 }
